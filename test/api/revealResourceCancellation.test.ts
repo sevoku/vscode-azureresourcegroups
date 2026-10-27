@@ -83,8 +83,8 @@ suite('Explicit resource operation isolation', () => {
                 }
                 return [];
             },
-            getTreeItem: node => {
-                if (fail('getTreeItem', node.id)) {
+            getTreeItem: (node, context) => {
+                if (fail('getTreeItem', node.id, context)) {
                     throw failure;
                 }
                 return new vscode.TreeItem(node.id,
@@ -107,7 +107,7 @@ suite('Explicit resource operation isolation', () => {
     });
 
     for (const grouping of ['resourceGroup', 'resourceType']) {
-        for (const method of ['getChildren', 'getResourceItem'] as const) {
+        for (const method of ['getChildren', 'getResourceItem', 'getTreeItem'] as const) {
             for (const kind of ['user cancellation', 'VS Code cancellation', 'failure']) {
                 test(`${method} ${kind} propagates with ${grouping} grouping`, async () => {
                     await vscode.commands.executeCommand(`azureResourceGroups.groupBy.${grouping}`);
@@ -139,6 +139,18 @@ suite('Explicit resource operation isolation', () => {
             assert.strictEqual(result?.resource, lastChild);
             assert.strictEqual(failureCalls, 0);
             assert.strictEqual(siblingLoads, 0);
+        });
+
+        test(`target tree-item cancellation is validated before ${grouping} native reveal`, async () => {
+            await vscode.commands.executeCommand(`azureResourceGroups.groupBy.${grouping}`);
+            let nativeReveals = 0;
+            revealOverride?.dispose();
+            revealOverride = getCachedTestApi().testing.overrideAzureResourceReveal(async () => { nativeReveals++; });
+            failureMethod = 'getTreeItem';
+            failureId = childId;
+            assert.strictEqual(await reveal(), undefined);
+            assert.ok(failureCalls > 0);
+            assert.strictEqual(nativeReveals, 0);
         });
 
         for (const method of ['listResources', 'listResourceGroups'] as const) {
@@ -195,8 +207,8 @@ suite('Explicit resource operation isolation', () => {
         });
         const first = reveal();
         await entered;
-        failureMethod = 'getChildren';
-        failureId = resourceId;
+        failureMethod = 'getTreeItem';
+        failureId = childId;
         failure = new Error('Second operation failed');
         assert.ok(secondRequest);
         try {

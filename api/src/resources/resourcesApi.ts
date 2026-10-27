@@ -78,10 +78,10 @@ export interface ResourcesApi {
     revealAzureResource(id: string, options?: VSCodeRevealOptions): Promise<void>;
 
     /**
-     * Resolve an Azure resource, then request its reveal in VS Code.
+     * Resolve and validate an Azure resource and its ancestors, then request its reveal in VS Code.
      * Returns its fully qualified tree node ID and the exact provider model, when available.
      * Prompts for sign-in if no Azure account is signed in. Returns undefined on cancellation.
-     * Rejects if explicit resource loading or the VS Code reveal request fails.
+     * Rejects if explicit loading, validation, or the VS Code reveal request fails.
      * Independent background tree rendering does not affect the result.
      * Multiple matching accounts/tenants are offered in a picker.
      * Requires a host exposing this method; older hosts only support {@link revealAzureResource}.

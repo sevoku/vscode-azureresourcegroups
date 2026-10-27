@@ -84,8 +84,8 @@ export class BranchDataItemWrapper implements ResourceGroupsItem, Wrapper {
         );
     }
 
-    async getTreeItem(): Promise<vscode.TreeItem> {
-        const treeItem = await this.branchDataProvider.getTreeItem(this.branchItem);
+    async getTreeItem(context?: TreeTraversalContext): Promise<vscode.TreeItem> {
+        const treeItem = await this.branchDataProvider.getTreeItem(this.branchItem, context);
         // set the id of the tree item to the id of the branch item
         // we do this because the branch item has already modified the item's id (see constructor)
         treeItem.id = this._id;
