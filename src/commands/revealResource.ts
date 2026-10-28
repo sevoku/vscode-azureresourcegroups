@@ -32,9 +32,13 @@ export async function revealResourceWithResult(context: IActionContext, resource
     const qualifiedId = subscriptionId + resourceId.replace(/^\/subscriptions\/[^/]+/i, '');
     context.valuesToMask.push(qualifiedId);
     const operation: TreeTraversalContext = { propagateErrors: true, targetId: qualifiedId };
-    const item = await provider.findItemById(qualifiedId, operation);
+    const ancestors: TreeDataItem[] = [];
+    const item = await provider.findItemById(qualifiedId, operation, ancestors);
     if (!item?.id) {
         throw new Error(localize('revealResourceNotFound', 'The requested Azure resource could not be found in the resource tree.'));
+    }
+    for (const ancestor of [...ancestors, item]) {
+        await provider.getTreeItem(ancestor, operation);
     }
     const resource = item instanceof BranchDataItemWrapper ? item.unwrap<ResourceModelBase>() : undefined;
     await ext.appResourceTreeView.reveal(item as unknown as AzExtTreeItem, options?.revealOptions ?? { expand: false, focus: true, select: true });

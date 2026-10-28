@@ -13,5 +13,5 @@ export interface ResourceGroupsItem {
 
     getParent?(): vscode.ProviderResult<ResourceGroupsItem>;
     getChildren(context?: TreeTraversalContext): vscode.ProviderResult<ResourceGroupsItem[]>;
-    getTreeItem(): vscode.TreeItem | Thenable<vscode.TreeItem>;
+    getTreeItem(context?: TreeTraversalContext): vscode.TreeItem | Thenable<vscode.TreeItem>;
 }

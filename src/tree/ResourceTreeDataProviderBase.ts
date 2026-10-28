@@ -4,12 +4,12 @@
  *--------------------------------------------------------------------------------------------*/
 
 import { AzureSubscriptionProvider } from '@microsoft/vscode-azext-azureauth';
-import { callWithTelemetryAndErrorHandling, parseError, TreeElementBase } from '@microsoft/vscode-azext-utils';
+import { parseError, TreeElementBase } from '@microsoft/vscode-azext-utils';
 import * as vscode from 'vscode';
 import { ResourceBase, ResourceModelBase } from '../../api/src/index';
 import { ext } from '../extensionVariables';
 import { inCloudShell } from '../utils/inCloudShell';
-import { normalizeTreeId, TreeTraversalContext } from '../utils/treeOperations';
+import { callWithTreeErrorHandling, normalizeTreeId, TreeTraversalContext } from '../utils/treeOperations';
 import { BranchDataItemCache } from './BranchDataItemCache';
 import { BranchDataItemWrapper } from './BranchDataItemWrapper';
 import { InvalidItem } from './InvalidItem';
@@ -96,14 +96,17 @@ export abstract class ResourceTreeDataProviderBase extends vscode.Disposable imp
         }
     }
 
-    async getTreeItem(element: TreeDataItem): Promise<vscode.TreeItem> {
+    async getTreeItem(element: TreeDataItem, options?: TreeTraversalContext): Promise<vscode.TreeItem> {
         try {
             // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-            return (await callWithTelemetryAndErrorHandling('getTreeItem', async context => {
+            return (await callWithTreeErrorHandling('getTreeItem', async context => {
                 context.errorHandling.rethrow = true;
-                return await element.getTreeItem();
-            }))!;
+                return await element.getTreeItem(options);
+            }, options))!;
         } catch (error) {
+            if (options?.propagateErrors) {
+                throw error;
+            }
             return new InvalidItem(parseError(error)).getTreeItem();
         }
     }
@@ -126,9 +129,12 @@ export abstract class ResourceTreeDataProviderBase extends vscode.Disposable imp
         return element.getParent?.();
     }
 
-    async findItemById(id: string, options?: TreeTraversalContext): Promise<TreeDataItem | undefined> {
+    async findItemById(id: string, options?: TreeTraversalContext, ancestors?: TreeDataItem[]): Promise<TreeDataItem | undefined> {
         let element: TreeDataItem | undefined = undefined;
         outerLoop: while (true) {
+            if (element) {
+                ancestors?.push(element);
+            }
             const children: TreeDataItem[] | null | undefined = await this.getChildren(element, options);
 
             if (!children) {

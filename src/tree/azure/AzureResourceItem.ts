@@ -8,6 +8,7 @@ import { AzureResource, BranchDataProvider, ResourceBase, ResourceModelBase } fr
 import { ResourceTags } from '../../commands/tags/TagFileSystem';
 import { ext } from '../../extensionVariables';
 import { createPortalUrl } from '../../utils/v2/createPortalUrl';
+import { TreeTraversalContext } from '../../utils/treeOperations';
 import { BranchDataItemCache } from '../BranchDataItemCache';
 import { BranchDataItemOptions, BranchDataItemWrapper } from '../BranchDataItemWrapper';
 import { ResourceGroupsItem } from '../ResourceGroupsItem';
@@ -38,8 +39,8 @@ export class AzureResourceItem<T extends AzureResource> extends BranchDataItemWr
         return this.parent;
     }
 
-    override async getTreeItem(): Promise<TreeItem> {
-        const treeItem = await super.getTreeItem();
+    override async getTreeItem(context?: TreeTraversalContext): Promise<TreeItem> {
+        const treeItem = await super.getTreeItem(context);
         treeItem.id = this.id;
         return treeItem;
     }
